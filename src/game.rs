@@ -1,7 +1,11 @@
+use std::{borrow::BorrowMut, io::Write};
+
 pub(crate) const BOARD_HEIGHT: usize = 24;
 pub(crate) const BOARD_HEIGHT_SHOWN: usize = 20;
+/// Number of Columns
 pub(crate) const BOARD_WIDTH: usize = 10;
-const FULL_ROW: u16 = 1023; //2 ^ 10 - 1
+/// 2 ^ 10 - 1
+const FULL_ROW: u16 = 1023;
 
 enum Tetromino {
     TetI,
@@ -12,15 +16,26 @@ enum Tetromino {
     TetJ,
     TetL,
 }
-pub(crate) struct GameState {
+pub(crate) struct GameState<W>
+where
+    W: Write,
+{
     board: [u16; BOARD_HEIGHT],
     score: u16,
+    write: W,
     // curr_piece: Tetromino,
 }
 
-impl GameState {
-    fn new(board: [u16; BOARD_HEIGHT], score: u16) -> Self {
-        Self { board, score }
+impl<W> GameState<W>
+where
+    W: Write,
+{
+    fn new(board: [u16; BOARD_HEIGHT], score: u16, write: W) -> Self {
+        Self {
+            board,
+            score,
+            write,
+        }
     }
     fn clear_rows(&mut self) -> () {
         let mut count: u16 = 0;
@@ -32,8 +47,8 @@ impl GameState {
         }
         self.score += count;
     }
-    pub(crate) fn make_game() -> Self {
-        GameState::new([0; BOARD_HEIGHT], 0)
+    pub(crate) fn make_game(write: W) -> Self {
+        GameState::new([0; BOARD_HEIGHT], 0, write)
     }
     pub(crate) fn advance_timestep(&mut self) -> () {
         self.score += 1;
@@ -51,6 +66,9 @@ impl GameState {
     }
     pub(crate) fn move_down(&mut self) -> () {
         //
+    }
+    pub(crate) fn get_write(&mut self) -> &mut W {
+        &mut self.write
     }
 }
 

@@ -4,7 +4,7 @@ use crate::game::{self};
 use crossterm::cursor::MoveTo;
 use crossterm::style::Print;
 
-pub(crate) fn draw_game<W>(current_state: &game::GameState, write: &mut W) -> ()
+pub(crate) fn draw_game<W>(current_state: &mut game::GameState<W>) -> ()
 where
     W: Write,
 {
@@ -15,11 +15,11 @@ where
             continue;
         }
         for pos in (0..game::BOARD_WIDTH).rev() {
-            queue!(write, MoveTo(x, y)).unwrap();
+            queue!(current_state.get_write(), MoveTo(x, y)).unwrap();
             if *tet_row & (1 << pos) != 0 {
-                queue!(write, Print("x ")).unwrap();
+                queue!(current_state.get_write(), Print("x ")).unwrap();
             } else {
-                queue!(write, Print(". ")).unwrap();
+                queue!(current_state.get_write(), Print(". ")).unwrap();
             }
             x += 2;
         }
@@ -27,5 +27,5 @@ where
         y += 1;
         x = 0;
     }
-    write.flush().unwrap();
+    current_state.get_write().flush().unwrap();
 }
