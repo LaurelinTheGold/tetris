@@ -18,33 +18,42 @@ use std::{
     thread::{self},
     u16,
 };
+use thread::spawn;
 
 use std::io::stderr;
 use std::thread::sleep;
 
 mod display;
 mod game;
+// mod tetromino;
 
 const ONE_SEC: Duration = Duration::from_secs(1);
 /// number of polls per sec
 const FPS: f32 = 60.;
 /// in seconds
 const TIME_STEP: f32 = 1.;
+const MAX_U_SIXTEEN: u16 = 65535;
 
 fn main() -> () {
-    let (tx, rx): (Sender<bool>, Receiver<bool>) = setup();
+    let (tx, rx): (Sender<bool>, Receiver<bool>) = if let Some(pair) = setup() {
+        pair
+    } else {
+        cleanup(MAX_U_SIXTEEN);
+        return;
+    };
+    // let (tx, rx): (Sender<bool>, Receiver<bool>) = setup().unwrap_or_else(f);
     let mut tetris_game = GameState::make_game(stderr());
     draw_game(&mut tetris_game);
     loop {
         let thread_tx = tx.clone();
         // Thread that waits for a time then signals before ending
-        let timer_thread = thread::spawn(move || {
+        let timer_thread = spawn(move || {
             sleep(ONE_SEC.mul_f32(TIME_STEP)); // wait for time
             let _ = thread_tx.send(true).unwrap(); // use channel to signal about to done
         });
         while rx.try_recv().is_err() {
-            if poll_for_keystroke(&mut tetris_game) {
-                cleanup();
+            if poll_for_keystroke(&mut tetris_game) || tetris_game.get_win() {
+                cleanup(tetris_game.get_score());
                 return;
             }
             sleep(ONE_SEC.div_f32(FPS)); // wait
@@ -104,27 +113,27 @@ where
     return false;
 }
 
-fn setup() -> (Sender<bool>, Receiver<bool>) {
+fn setup() -> Option<(Sender<bool>, Receiver<bool>)> {
+    execute!(stderr(), EnterAlternateScreen,).unwrap();
     println!("Press Enter to play tetris. Q quits. ");
     enable_raw_mode().unwrap();
-    while read().unwrap() != Event::Key(KeyCode::Enter.into()) {}
-    execute!(
-        stderr(),
-        EnterAlternateScreen,
-        // SetSize(BOARD_WIDTH as u16 * 2, BOARD_HEIGHT_SHOWN as u16),
-        // ScrollDown(BOARD_HEIGHT_SHOWN as u16 + 1) // TODO what is this???
-    )
-    .unwrap();
+    loop {
+        let keypress = read().unwrap();
+        if keypress == Event::Key(KeyCode::Enter.into()) {
+            break;
+        } else if keypress == Event::Key(KeyCode::Char('q').into()) {
+            return None;
+        }
+    }
     let (t, r) = channel();
-    return (t, r);
+    return Some((t, r));
 }
 
-fn cleanup() -> () {
-    execute!(
-        stderr(),
-        LeaveAlternateScreen,
-        // SetSize(cols, rows),
-    )
-    .unwrap();
+fn cleanup(score: u16) -> () {
+    execute!(stderr(), LeaveAlternateScreen,).unwrap();
     disable_raw_mode().unwrap();
+    match score {
+        MAX_U_SIXTEEN => println!("Peace o7"),
+        _ => println!("Game Over. Your Score was: {}", score),
+    }
 }

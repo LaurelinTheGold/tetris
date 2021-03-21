@@ -23,7 +23,6 @@ where
             }
             x += 2;
         }
-        // println!("  line {}", 23 - idx);
         y += 1;
         x = 0;
     }
