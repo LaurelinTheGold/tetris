@@ -25,7 +25,7 @@ use std::thread::sleep;
 
 mod display;
 mod game;
-// mod tetromino;
+mod tetromino;
 
 const ONE_SEC: Duration = Duration::from_secs(1);
 /// number of polls per sec

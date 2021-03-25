@@ -10,7 +10,7 @@ where
 {
     let mut x: u16 = 0;
     let mut y: u16 = 0;
-    for (idx, tet_row) in current_state.get_board().iter().enumerate() {
+    for (idx, tet_row) in current_state.draw_board_and_piece().iter().enumerate() {
         if idx < 4 {
             continue;
         }
