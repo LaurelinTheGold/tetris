@@ -1,15 +1,21 @@
 use crate::board::BoardRow;
 
+///Size in bits of a single tetromino box
 const UNIT_SIZE: usize = 16;
+/// Total number of unique orientations
 const NUM_ROTS: usize = 4;
-const TET_BOX_SIZE: usize = 4;
+/// Base and Height of the bounding box for a tetromino
+pub(crate) const TET_BOX_SIZE: usize = 4;
 /// contains 4 TetBoxes 1 for each orientation, 0 is the Most Sig 16 bits, etc
-type TetRotFull = u64;
+pub(crate) type TetRotFull = u64;
 /// 4x4 bit box, MSB top left, bit12 top right, bit3 bottom left, LSB bottom right
 type TetBox = u16;
 /// MSB and 2nd most are rot info, next 7 bits are unisgned x, next 7 are unsigned y
 type TetOther = u16;
+/// 4 rows of bit data for the board to use
 type BoardBoxRows = [BoardRow; TET_BOX_SIZE];
+/// 0 to 6, error otherwise idk if posslbe
+pub(crate) type TetEnum = usize;
 
 /*
 Comparison traits: Eq, PartialEq, Ord, PartialOrd.
@@ -36,7 +42,7 @@ const TET_T: TetRotFull =
     0b1110_0100_0000_0000_0100_1100_0100_0000_0100_1110_0000_0000_1000_1100_1000_0000u64;
 
 #[derive(Debug)]
-struct InvalidIndexErr;
+pub(crate) struct InvalidIndexErr;
 trait TetOtherTraits {
     // cannot error
     fn get_x(&self) -> usize;
@@ -46,13 +52,13 @@ trait TetOtherTraits {
     fn set_x(&mut self, new_x: usize) -> ();
     fn set_y(&mut self, new_y: usize) -> ();
     fn set_r(&mut self, new_r: usize) -> ();
-    // can error at edge for x y
+    // can't error, if at limit do nothing
     fn inc_x(&mut self, move_left: bool) -> ();
     fn inc_y(&mut self, move_down: bool) -> ();
     fn inc_r(&mut self, clockwise: bool) -> ();
 }
 
-trait TetRotTraits {
+pub(crate) trait TetRotTraits {
     fn get_tet_box(&self, idx: usize) -> Result<TetBox, InvalidIndexErr>;
     fn make_from_idx(num: usize) -> Result<TetRotFull, InvalidIndexErr>;
 }
@@ -64,12 +70,19 @@ trait TetOps {
 }
 
 trait TetBoxTraits {
-    fn reshape_to_array(&self) -> [BoardRow; TET_BOX_SIZE];
+    fn reshape_to_array(&self) -> BoardBoxRows;
 }
 
-struct Tetromino {
+pub(crate) struct Tetromino {
     piece_bits: TetRotFull,
     piece_meta: TetOther,
+}
+
+impl Tetromino {
+    /// Set the tetromino's piece bits.
+    pub(crate) fn set_piece_bits(&mut self, piece_bits: TetRotFull) {
+        self.piece_bits = piece_bits;
+    }
 }
 
 impl TetRotTraits for TetRotFull {
