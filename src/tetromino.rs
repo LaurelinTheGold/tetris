@@ -21,7 +21,7 @@ pub(crate) const NUM_ROT: usize = 4;
 pub(crate) const TETRO_BOX: usize = 4;
 
 type TetShape = [[u16; TETRO_BOX]; NUM_ROT];
-type BoardChunk = [u16; TETRO_BOX];
+pub(crate) type BoardChunk = [u16; TETRO_BOX];
 
 const TET_O: TetShape = [[0b1100, 0b1100, 0, 0]; TETRO_BOX];
 
@@ -58,7 +58,7 @@ impl TetVar {
     }
 }
 
-trait TetrominoOps {
+pub(crate) trait TetrominoOps {
     fn rotate(&mut self, chunk: &BoardChunk) -> bool;
     fn go_left(&mut self, left: bool, chunk: &BoardChunk) -> bool;
     fn go_down(&mut self, chunk: &BoardChunk) -> bool;

@@ -17,7 +17,7 @@ where
         for pos in (0..game::BOARD_WIDTH).rev() {
             queue!(current_state.get_write(), MoveTo(x, y)).unwrap();
             if *tet_row & (1 << pos) != 0 {
-                queue!(current_state.get_write(), Print("x ")).unwrap();
+                queue!(current_state.get_write(), Print("O ")).unwrap();
             } else {
                 queue!(current_state.get_write(), Print(". ")).unwrap();
             }

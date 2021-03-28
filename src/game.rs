@@ -1,10 +1,11 @@
-use std::{borrow::BorrowMut, io::Write};
+use std::{borrow::BorrowMut, convert::TryInto, io::Write};
 
 use tetromino::Tetromino;
 
-use crate::tetromino::{self, TetVar, TETRO_BOX};
+use crate::tetromino::{self, TetVar, TetrominoOps, TETRO_BOX};
 
 pub(crate) const BOARD_HEIGHT: usize = 24;
+const BOARD_HEIGHT_EXTEND: usize = BOARD_HEIGHT + TETRO_BOX - 1;
 pub(crate) const BOARD_HEIGHT_SHOWN: usize = 20;
 /// Number of Columns
 pub(crate) const BOARD_WIDTH: usize = 10;
@@ -15,7 +16,7 @@ pub(crate) struct GameState<W>
 where
     W: Write,
 {
-    board: [u16; BOARD_HEIGHT],
+    board: [u16; BOARD_HEIGHT_EXTEND],
     score: u16,
     write: W,
     game_over: bool,
@@ -27,7 +28,7 @@ where
     W: Write,
 {
     fn new(
-        board: [u16; BOARD_HEIGHT],
+        board: [u16; BOARD_HEIGHT_EXTEND],
         score: u16,
         write: W,
         game_over: bool,
@@ -51,7 +52,7 @@ where
     }
     pub(crate) fn make_game(write: W) -> Self {
         GameState::new(
-            [0; BOARD_HEIGHT],
+            [0; BOARD_HEIGHT_EXTEND],
             0,
             write,
             false,
@@ -65,16 +66,22 @@ where
         // todo!()
     }
     pub(crate) fn get_board(&self) -> [u16; BOARD_HEIGHT] {
-        self.board
+        self.board[0..BOARD_HEIGHT]
+            .try_into()
+            .expect("wack board height")
     }
 
     pub(crate) fn draw_board_and_piece(&self) -> [u16; BOARD_HEIGHT] {
-        let mut myBoard: [u16; BOARD_HEIGHT] = self.board.clone();
+        // let mut myBoard: [u16; BOARD_HEIGHT] = self.get_board().clone();
+        let mut my_board = self.board;
         for i in 0..TETRO_BOX {
-            myBoard[*self.curr_piece.y() as usize + i] = myBoard[*self.curr_piece.y() as usize + i]
+            my_board[*self.curr_piece.y() as usize + i] = my_board
+                [*self.curr_piece.y() as usize + i]
                 | self.curr_piece.shape().get_shape()[*self.curr_piece.idx() as usize][i];
         }
-        myBoard
+        my_board[0..BOARD_HEIGHT]
+            .try_into()
+            .expect("wack board height")
     }
 
     pub(crate) fn rotate_piece(&mut self) -> () {
@@ -84,7 +91,8 @@ where
         //
     }
     pub(crate) fn move_down(&mut self) -> () {
-        //
+        let tmp = self.get_board_chunk();
+        self.curr_piece.go_down(&self.get_board_chunk().clone()); // need board chunk as immutable
     }
     pub(crate) fn get_write(&mut self) -> &mut W {
         &mut self.write
@@ -99,6 +107,12 @@ where
     /// Get a reference to the game state's curr piece.
     pub(crate) fn curr_piece(&self) -> &Tetromino {
         &self.curr_piece
+    }
+    fn get_board_chunk(&self) -> crate::tetromino::BoardChunk {
+        let tmp = *self.curr_piece.y() as usize;
+        self.board[tmp..(tmp + 4)]
+            .try_into()
+            .expect("slice with wrong length")
     }
 }
 
